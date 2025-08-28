@@ -1,37 +1,20 @@
+# monitor.py
 
-from time import sleep
-import sys
+from vitals import check_vitals
+from alerts import alert_if_not_ok
 
+def vitals_ok(temperature, pulse_rate, spo2):
+    vital_values = {
+        "temperature": temperature,
+        "pulse": pulse_rate,
+        "spo2": spo2
+    }
 
-def vitals_ok(temperature, pulseRate, spo2):
-  if temperature > 102 or temperature < 95:
-    print('Temperature critical!')
-    for i in range(6):
-      print('\r* ', end='')
-      sys.stdout.flush()
-      sleep(1)
-      print('\r *', end='')
-      sys.stdout.flush()
-      sleep(1)
-    return False
-  elif pulseRate < 60 or pulseRate > 100:
-    print('Pulse Rate is out of range!')
-    for i in range(6):
-      print('\r* ', end='')
-      sys.stdout.flush()
-      sleep(1)
-      print('\r *', end='')
-      sys.stdout.flush()
-      sleep(1)
-    return False
-  elif spo2 < 90:
-    print('Oxygen Saturation out of range!')
-    for i in range(6):
-      print('\r* ', end='')
-      sys.stdout.flush()
-      sleep(1)
-      print('\r *', end='')
-      sys.stdout.flush()
-      sleep(1)
-    return False
-  return True
+    results = check_vitals(vital_values)
+
+    all_ok = True
+    for vital, is_ok in results.items():
+        label = vital.replace("_", " ").capitalize()
+        all_ok = alert_if_not_ok(label, is_ok) and all_ok
+
+    return all_ok
