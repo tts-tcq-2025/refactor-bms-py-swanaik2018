@@ -1,45 +1,55 @@
-# monitor.test.py
+# monitor_test.py
+
 import unittest
-from monitor import check_vitals
+from vitals import check_vitals, is_vital_ok
 
+class TestVitals(unittest.TestCase):
+    # Temperature tests
+    def test_temperature_below_range(self):
+        self.assertFalse(is_vital_ok("temperature", 94.9))
 
-class MonitorTest(unittest.TestCase):
-    def test_temperature_out_of_range(self):
-        result = check_vitals(94.9, 70, 98)
-        self.assertFalse(result["temperature"])
+    def test_temperature_at_lower_bound(self):
+        self.assertTrue(is_vital_ok("temperature", 95))
 
-    def test_temperature_edge_values(self):
-        self.assertTrue(check_vitals(95, 70, 98)["temperature"])
-        self.assertTrue(check_vitals(102, 70, 98)["temperature"])
-        self.assertFalse(check_vitals(102.1, 70, 98)["temperature"])
+    def test_temperature_above_range(self):
+        self.assertFalse(is_vital_ok("temperature", 102.1))
 
-    def test_pulse_out_of_range(self):
-        result = check_vitals(98.6, 59, 98)
-        self.assertFalse(result["pulse"])
+    # Pulse tests
+    def test_pulse_below_range(self):
+        self.assertFalse(is_vital_ok("pulse", 59))
 
-    def test_pulse_edge_values(self):
-        self.assertTrue(check_vitals(98.6, 60, 98)["pulse"])
-        self.assertTrue(check_vitals(98.6, 100, 98)["pulse"])
-        self.assertFalse(check_vitals(98.6, 101, 98)["pulse"])
+    def test_pulse_at_upper_bound(self):
+        self.assertTrue(is_vital_ok("pulse", 100))
 
-    def test_spo2_out_of_range(self):
-        result = check_vitals(98.6, 70, 89)
-        self.assertFalse(result["spo2"])
+    def test_pulse_above_range(self):
+        self.assertFalse(is_vital_ok("pulse", 101))
 
-    def test_spo2_edge_values(self):
-        self.assertTrue(check_vitals(98.6, 70, 90)["spo2"])
-        self.assertFalse(check_vitals(98.6, 70, 89.9)["spo2"])
+    # SpO2 tests
+    def test_spo2_below_threshold(self):
+        self.assertFalse(is_vital_ok("spo2", 89.9))
 
+    def test_spo2_exact_threshold(self):
+        self.assertTrue(is_vital_ok("spo2", 90))
+
+    def test_spo2_above_threshold(self):
+        self.assertTrue(is_vital_ok("spo2", 98))
+
+    # Combined checks
     def test_all_vitals_ok(self):
-        result = check_vitals(98.6, 70, 95)
+        values = {"temperature": 98.6, "pulse": 75, "spo2": 96}
+        result = check_vitals(values)
         self.assertTrue(all(result.values()))
 
     def test_multiple_vitals_not_ok(self):
-        result = check_vitals(103, 50, 85)
+        values = {"temperature": 104, "pulse": 40, "spo2": 80}
+        result = check_vitals(values)
         self.assertFalse(result["temperature"])
         self.assertFalse(result["pulse"])
         self.assertFalse(result["spo2"])
 
+    def test_invalid_vital_name_raises_exception(self):
+        with self.assertRaises(ValueError):
+            is_vital_ok("blood_pressure", 120)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
